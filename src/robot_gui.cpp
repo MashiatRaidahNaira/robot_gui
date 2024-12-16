@@ -1,9 +1,12 @@
 #include "robot_gui/robot_gui.h"
+#include "geometry_msgs/Twist.h"
 #include "ros/init.h"
 #include "ros/node_handle.h"
+#include <istream>
 
 RobotGui::RobotGui() {
   ros::NodeHandle nh;
+  twist_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
   sub = nh.subscribe("/robot_info", 1000, &RobotGui::infoCallback, this);
 }
 
@@ -37,6 +40,39 @@ void RobotGui::info_render(cv::Mat &frame) {
   }
 }
 
+void RobotGui::teleoperation_buttons(cv::Mat &frame) {
+  // Button parameters
+  int width = 80, height = 50;
+  int fx = 170, fy = 240;
+  int sx = 170, sy = 300;
+  int bx = 170, by = 360;
+  int rx = 260, ry = 300;
+  int lx = 80, ly = 300;
+
+  if (cvui::button(frame, fx, fy, width, height, "Forward")) {
+    twist_msg.linear.x += 0.5;
+  }
+
+  if (cvui::button(frame, sx, sy, width, height, "Stop")) {
+    twist_msg.linear.x = 0.0;
+    twist_msg.angular.z = 0.0;
+  }
+
+  if (cvui::button(frame, bx, by, width, height, "Backward")) {
+    twist_msg.linear.x -= 0.5;
+  }
+
+  if (cvui::button(frame, rx, ry, width, height, "Right")) {
+    twist_msg.angular.z -= 0.5;
+  }
+
+  if (cvui::button(frame, lx, ly, width, height, "Left")) {
+    twist_msg.angular.z += 0.5;
+  }
+
+  twist_pub.publish(twist_msg);
+}
+
 void RobotGui::output() {
 
   cvui::init(WINDOW_NAME);
@@ -47,8 +83,12 @@ void RobotGui::output() {
   while (ros::ok()) {
     // Fill the frame with a nice color
     frame = cv::Scalar(49, 52, 49);
+
     // General Info Area
     info_render(frame);
+    // Teleoperation Buttons
+    teleoperation_buttons(frame);
+
     // Show final result
     cvui::imshow(WINDOW_NAME, frame);
 
