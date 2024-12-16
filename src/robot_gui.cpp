@@ -73,6 +73,21 @@ void RobotGui::teleoperation_buttons(cv::Mat &frame) {
   twist_pub.publish(twist_msg);
 }
 
+void RobotGui::current_velocity(cv::Mat &frame) {
+  // Parameters
+  int lin_x = 20, lin_y = 420;
+  int ang_x = 220, ang_y = 420;
+  int width = 185, height = 60;
+
+  cvui::window(frame, lin_x, lin_y, width, height, "Linear velocity:");
+  cvui::printf(frame, lin_x + 60, lin_y + 30, 0.5, 0xff0000, "%.2f m/sec",
+               twist_msg.linear.x);
+
+  cvui::window(frame, ang_x, ang_y, width, height, "Angular velocity:");
+  cvui::printf(frame, ang_x + 60, ang_y + 30, 0.5, 0xff0000, "%.2f rad/sec",
+               twist_msg.angular.z);
+}
+
 void RobotGui::output() {
 
   cvui::init(WINDOW_NAME);
@@ -88,6 +103,8 @@ void RobotGui::output() {
     info_render(frame);
     // Teleoperation Buttons
     teleoperation_buttons(frame);
+    // Current velocities
+    current_velocity(frame);
 
     // Show final result
     cvui::imshow(WINDOW_NAME, frame);

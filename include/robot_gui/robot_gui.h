@@ -16,6 +16,7 @@ public:
   RobotGui();
   void info_render(cv::Mat &frame);
   void teleoperation_buttons(cv::Mat &frame);
+  void current_velocity(cv::Mat &frame);
   void output();
 
 private:
