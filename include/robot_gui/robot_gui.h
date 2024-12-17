@@ -31,6 +31,7 @@ private:
   geometry_msgs::Twist twist_msg;
   ros::Subscriber odom_sub;
   ros::ServiceClient get_distance_client;
+  ros::ServiceClient reset_distance_client;
   std_srvs::Trigger srv_req;
   std::string distance_;
   nav_msgs::Odometry odom_msg;

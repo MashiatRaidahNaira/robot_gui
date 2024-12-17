@@ -12,6 +12,8 @@ RobotGui::RobotGui() {
   odom_sub = nh.subscribe("/odom", 1000, &RobotGui::odomCallback, this);
   get_distance_client = nh.serviceClient<std_srvs::Trigger>("/get_distance");
   distance_ = "0.00";
+  reset_distance_client =
+      nh.serviceClient<std_srvs::Trigger>("/reset_distance");
 }
 
 void RobotGui::infoCallback(
@@ -146,6 +148,14 @@ void RobotGui::distance_travelled_service(cv::Mat &frame) {
                "Distance in meters:");
   cvui::printf(frame, theWX + 140, theWY + 60, thePrintFonstScale,
                thePrintColor, "%s", distance_.c_str());
+
+  if (cvui::button(frame, theBX, theBY + 130, 360, 30, "Reset Distance")) {
+    if (reset_distance_client.call(srv_req)) {
+      distance_ = srv_req.response.message;
+    } else {
+      ROS_ERROR("Failed to call service /reset_distance");
+    }
+  }
 }
 
 void RobotGui::output() {
