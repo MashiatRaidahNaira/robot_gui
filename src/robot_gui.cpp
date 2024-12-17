@@ -2,6 +2,7 @@
 #include "geometry_msgs/Twist.h"
 #include "ros/init.h"
 #include "ros/node_handle.h"
+#include "std_srvs/Trigger.h"
 #include <istream>
 
 RobotGui::RobotGui() {
@@ -9,6 +10,8 @@ RobotGui::RobotGui() {
   twist_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
   sub = nh.subscribe("/robot_info", 1000, &RobotGui::infoCallback, this);
   odom_sub = nh.subscribe("/odom", 1000, &RobotGui::odomCallback, this);
+  get_distance_client = nh.serviceClient<std_srvs::Trigger>("/get_distance");
+  distance_ = "0.00";
 }
 
 void RobotGui::infoCallback(
@@ -118,6 +121,33 @@ void RobotGui::robot_position_odometry(cv::Mat &frame) {
                thePrintColor, "%.2f", odom_msg.pose.pose.position.z);
 }
 
+void RobotGui::distance_travelled_service(cv::Mat &frame) {
+  // Text, Call button, Window and printf Parameters
+  int theX = 20, theY = 640;
+  double theTextFontScale = 0.5, thePrintFonstScale = 0.9;
+  unsigned int theTextColor = 0xC0FFC0, thePrintColor = 0xFFFFFF;
+  int theBX = theX, theBY = theY + 20;
+  int theBWidth = 110, theBHeight = 110;
+  int theWX = theX + theBWidth + 20, theWY = theBY;
+  int theWWidth = 230, theWHeight = theBHeight;
+
+  cvui::text(frame, theX, theY, "Distance Travelled:", theTextFontScale,
+             theTextColor);
+
+  if (cvui::button(frame, theBX, theBY, theBWidth, theBHeight, "Call")) {
+    if (get_distance_client.call(srv_req)) {
+      distance_ = srv_req.response.message;
+    } else {
+      ROS_ERROR("Failed to call service /get_distance");
+    }
+  }
+
+  cvui::window(frame, theWX, theWY, theWWidth, theWHeight,
+               "Distance in meters:");
+  cvui::printf(frame, theWX + 140, theWY + 60, thePrintFonstScale,
+               thePrintColor, "%s", distance_.c_str());
+}
+
 void RobotGui::output() {
 
   cvui::init(WINDOW_NAME);
@@ -137,6 +167,8 @@ void RobotGui::output() {
     current_velocity(frame);
     // Robot position (Odometry based)
     robot_position_odometry(frame);
+    // Distance travelled service
+    distance_travelled_service(frame);
 
     // Show final result
     cvui::imshow(WINDOW_NAME, frame);
