@@ -8,11 +8,16 @@ RobotGui::RobotGui() {
   ros::NodeHandle nh;
   twist_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000);
   sub = nh.subscribe("/robot_info", 1000, &RobotGui::infoCallback, this);
+  odom_sub = nh.subscribe("/odom", 1000, &RobotGui::odomCallback, this);
 }
 
 void RobotGui::infoCallback(
     const robotinfo_msgs::RobotInfo10FieldsConstPtr &msg) {
   info_msg = *msg;
+}
+
+void RobotGui::odomCallback(const nav_msgs::OdometryConstPtr &msg) {
+  odom_msg = *msg;
 }
 
 void RobotGui::info_render(cv::Mat &frame) {
@@ -88,6 +93,31 @@ void RobotGui::current_velocity(cv::Mat &frame) {
                twist_msg.angular.z);
 }
 
+void RobotGui::robot_position_odometry(cv::Mat &frame) {
+  // Position Parameters
+  int theX = 20, theY = 500;
+  double theTextFontScale = 0.5, thePrintFonstScale = 0.9;
+  unsigned int theTextColor = 0xC0FFC0, thePrintColor = 0xFFFFFF;
+  int theWX = theX, theWY = theY + 20;
+  int theWidth = 110, theHeight = 110;
+
+  cvui::text(frame, theX, theY,
+             "Estimated robot position based off odometry:", theTextFontScale,
+             theTextColor);
+
+  cvui::window(frame, theWX, theWY, theWidth, theHeight, "X");
+  cvui::printf(frame, theWX + 10, theWY + 50, thePrintFonstScale, thePrintColor,
+               "%.2f", odom_msg.pose.pose.position.x);
+
+  cvui::window(frame, theWX + 130, theWY, theWidth, theHeight, "Y");
+  cvui::printf(frame, theWX + 140, theWY + 50, thePrintFonstScale,
+               thePrintColor, "%.2f", odom_msg.pose.pose.position.y);
+
+  cvui::window(frame, theWX + 260, theWY, theWidth, theHeight, "Z");
+  cvui::printf(frame, theWX + 270, theWY + 50, thePrintFonstScale,
+               thePrintColor, "%.2f", odom_msg.pose.pose.position.z);
+}
+
 void RobotGui::output() {
 
   cvui::init(WINDOW_NAME);
@@ -105,6 +135,8 @@ void RobotGui::output() {
     teleoperation_buttons(frame);
     // Current velocities
     current_velocity(frame);
+    // Robot position (Odometry based)
+    robot_position_odometry(frame);
 
     // Show final result
     cvui::imshow(WINDOW_NAME, frame);
